@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
-import { HandUpSection } from '../components/HandUpSection'; // 방금 만든 컴포넌트
-import { Save, LogOut, User, ClipboardList } from 'lucide-react';
+import { HandUpSection } from '../components/HandUpSection'; 
+import { Save, LogOut, User, ClipboardList, KeyRound, Delete } from 'lucide-react';
 
-// 로그인 시 전달받은 유저 정보 타입 (프로젝트에 맞게 수정 가능)
+// 로그인 시 전달받은 유저 정보 타입
 interface UserInfo {
   name: string;
   studentId: string;
@@ -15,10 +15,15 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 문제 2 해결: 페이지 접속 시 해당 면접관이 이전에 썼던 데이터가 있는지 불러오기
+  // 2차 비번 변경 관련 상태
+  const [isChangePinOpen, setIsChangePinOpen] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [pinMessage, setPinMessage] = useState('');
+
+  // 페이지 접속 시 해당 면접관이 이전에 썼던 데이터가 있는지 불러오기
   useEffect(() => {
     const loadExistingData = async () => {
-      if (!applicantName) return; // 지원자 이름을 입력했을 때 해당 데이터 검색
+      if (!applicantName) return; 
       
       const { data, error } = await supabase
         .from('evaluations')
@@ -31,7 +36,6 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
         setScore(data.score);
         setComment(data.comment);
       } else {
-        // 데이터가 없으면 초기화
         setScore(0);
         setComment('');
       }
@@ -39,7 +43,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
     loadExistingData();
   }, [applicantName, user.studentId]);
 
-  // 문제 2 해결: 데이터 저장 함수 (이 함수가 DB로 데이터를 보냅니다!)
+  // 평가 내용 DB 저장 함수
   const handleSave = async () => {
     if (!applicantName) return alert('지원자 이름을 입력해주세요.');
     
@@ -64,10 +68,99 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
     }
   };
 
+  // 2차 비번 변경 로직: 키패드 클릭
+  const handlePinClick = (num: string) => {
+    if (newPin.length < 4) {
+      const updatedPin = newPin + num;
+      setNewPin(updatedPin);
+      
+      // 4자리 모두 입력 시 자동 변경 시도
+      if (updatedPin.length === 4) {
+        handleChangePin(updatedPin);
+      }
+    }
+  };
+
+  // 2차 비번 DB 업데이트 함수
+  const handleChangePin = async (pin: string) => {
+    const { error } = await supabase
+      .from('evaluators')
+      .update({ pin_code: pin })
+      .eq('student_id', user.studentId);
+      
+    if (!error) {
+      setPinMessage('✅ 비밀번호가 성공적으로 변경되었습니다!');
+      // 1.5초 뒤 팝업 닫기 및 초기화
+      setTimeout(() => { 
+        setIsChangePinOpen(false); 
+        setNewPin(''); 
+        setPinMessage(''); 
+      }, 1500);
+    } else {
+      setPinMessage('❌ 변경 실패. 다시 시도해주세요.');
+      setNewPin(''); // 틀렸을 시 다시 입력하도록 비움
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      {/* 2차 비밀번호 변경 모달 팝업 */}
+      {isChangePinOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-sm relative border border-gray-200">
+            {/* 닫기 버튼 */}
+            <button 
+              onClick={() => { setIsChangePinOpen(false); setNewPin(''); setPinMessage(''); }} 
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition"
+            >
+              ✕
+            </button>
+            
+            <div className="text-center mb-6">
+              <KeyRound className="w-10 h-10 text-yellow-500 mx-auto mb-2" />
+              <h3 className="text-xl font-bold text-gray-800">2차 비밀번호 변경</h3>
+              <p className="text-sm text-gray-500 mt-1">새로 사용할 숫자 4자리를 입력하세요.</p>
+            </div>
+            
+            {/* 핀 번호 입력 표시창 (동그라미) */}
+            <div className="flex justify-center gap-3 mb-6">
+              {[0, 1, 2, 3].map((i) => (
+                <div 
+                  key={i} 
+                  className={`w-4 h-4 rounded-full ${i < newPin.length ? 'bg-yellow-500' : 'bg-gray-200'}`} 
+                />
+              ))}
+            </div>
+            
+            {/* 결과 메시지 */}
+            {pinMessage && <p className="text-center text-sm mb-4 font-bold text-blue-600">{pinMessage}</p>}
+
+            {/* 숫자 키패드 (2x5 배열) */}
+            <div className="grid grid-cols-5 gap-2">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
+                <button
+                  key={num} 
+                  onClick={() => handlePinClick(num.toString())}
+                  className="py-4 bg-gray-50 rounded-xl text-xl font-bold text-gray-800 hover:bg-yellow-50 hover:text-yellow-600 transition active:scale-95"
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+            
+            {/* 지우기 버튼 */}
+            <button 
+              onClick={() => setNewPin(newPin.slice(0, -1))} 
+              className="w-full mt-4 p-3 text-gray-500 flex justify-center items-center gap-2 hover:bg-gray-100 rounded-lg transition font-medium"
+            >
+              <Delete className="w-5 h-5" /> 마지막 입력 지우기
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto">
-        {/* 상단 헤더 */}
+        {/* 상단 헤더 영역 */}
         <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center gap-3">
             <div className="bg-blue-100 p-2 rounded-full">
@@ -78,16 +171,27 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
               <p className="font-bold text-gray-800">{user.name} ({user.studentId})</p>
             </div>
           </div>
-          <button 
-            onClick={onLogout}
-            className="flex items-center gap-2 text-gray-500 hover:text-red-500 transition"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>로그아웃</span>
-          </button>
+          
+          {/* 우측 버튼 그룹: 2차 비번 변경 & 로그아웃 */}
+          <div className="flex items-center gap-2 md:gap-4">
+            <button 
+              onClick={() => setIsChangePinOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-xl text-xs md:text-sm font-bold transition border border-yellow-200"
+            >
+              <KeyRound className="w-4 h-4" />
+              <span className="hidden sm:inline">2차 비번 변경</span>
+            </button>
+            <button 
+              onClick={onLogout}
+              className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition text-sm font-medium"
+            >
+              <LogOut className="w-5 h-5" /> 
+              <span className="hidden sm:inline">로그아웃</span>
+            </button>
+          </div>
         </div>
 
-        {/* 문제 1 해결: 실시간 손들기 섹션 */}
+        {/* 실시간 손들기 섹션 */}
         <div className="mb-8">
           <HandUpSection userName={user.name} />
         </div>
@@ -135,7 +239,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
               />
             </div>
 
-            {/* ✨ 저장 버튼 (이게 DB로 데이터를 쏩니다!) ✨ */}
+            {/* 저장 버튼 (DB로 데이터 전송) */}
             <button 
               onClick={handleSave}
               disabled={isLoading}
