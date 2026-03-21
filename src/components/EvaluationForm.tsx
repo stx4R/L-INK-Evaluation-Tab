@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { Save } from 'lucide-react';
+import { Save, Database } from 'lucide-react'; // Database 아이콘 추가
+import { supabase } from '../utils/supabase'; // 🚀 Supabase 불러오기
 
 export const EvaluationForm: React.FC = () => {
   const { currentUser, currentApplicantId, evaluations, saveEvaluation } = useStore();
@@ -11,12 +12,14 @@ export const EvaluationForm: React.FC = () => {
   const [score, setScore] = useState(existingData.score);
   const [comment, setComment] = useState(existingData.comment);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDbSaving, setIsDbSaving] = useState(false); // 🚀 DB 저장 상태 관리
 
   useEffect(() => {
     setScore(existingData.score);
     setComment(existingData.comment);
   }, [currentApplicantId]);
 
+  // (기존) 로컬 상태에 자동 저장
   useEffect(() => {
     setIsSaving(true);
     const timeoutId = setTimeout(() => {
@@ -34,12 +37,40 @@ export const EvaluationForm: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [score, comment, currentApplicantId, currentUser, saveEvaluation]);
 
+  // 🚀 (신규) DB로 쏘는 저장 함수
+  const handleDbSave = async () => {
+    if (!currentUser || !currentApplicantId) {
+      alert('평가할 지원자를 먼저 선택해주세요.');
+      return;
+    }
+
+    setIsDbSaving(true);
+    const { error } = await supabase
+      .from('evaluations')
+      .upsert({
+        evaluator_id: currentUser.studentId,
+        evaluator_name: currentUser.name,
+        applicant_name: currentApplicantId, // 지원자 이름 또는 ID
+        score: score,
+        comment: comment,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'evaluator_id, applicant_name' });
+
+    setIsDbSaving(false);
+
+    if (error) {
+      alert('DB 저장 실패: ' + error.message);
+    } else {
+      alert('✅ 평가 결과가 데이터베이스에 성공적으로 제출되었습니다!');
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white">면접 평가</h3>
         <div className={`text-sm flex items-center gap-1.5 font-medium ${isSaving ? 'text-gray-400 dark:text-slate-500' : 'text-blue-500 dark:text-blue-400'}`}>
-          <Save size={16} /> {isSaving ? '저장 중...' : '자동 저장됨'}
+          <Save size={16} /> {isSaving ? '임시 저장 중...' : '자동 임시저장됨'}
         </div>
       </div>
 
@@ -69,6 +100,18 @@ export const EvaluationForm: React.FC = () => {
             placeholder="지원자의 답변 내용, 태도, 특이사항 등을 상세히 기록해주세요."
           />
         </div>
+
+        {/* 🚀 파란색 DB 제출 버튼 */}
+        <button 
+          onClick={handleDbSave}
+          disabled={isDbSaving || !currentApplicantId}
+          className={`w-full py-4 mt-2 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition ${
+            isDbSaving || !currentApplicantId ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100 dark:shadow-none'
+          }`}
+        >
+          <Database size={20} />
+          {isDbSaving ? 'DB에 제출 중...' : '최종 평가 DB에 제출하기'}
+        </button>
       </div>
     </div>
   );

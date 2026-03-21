@@ -2,14 +2,18 @@ import { useStore } from './store/useStore';
 import { Login } from './components/Login';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
+import AdminPage from './pages/AdminPage'; // ✨ 어드민 페이지 불러오기
 
 function App() {
-  // 스토어에서 로그인한 유저 정보를 가져옵니다.
   const currentUser = useStore((state) => state.currentUser);
+
+  // ✨ 현재 인터넷 주소가 '/admin'인지 확인해서, 맞으면 어드민 페이지를 바로 보여줍니다.
+  if (window.location.pathname === '/admin') {
+    return <AdminPage />;
+  }
 
   return (
     <>
-      {/* 유저가 없으면 로그인 페이지를, 있으면 메인 대시보드를 보여줍니다. */}
       {!currentUser ? (
         <Login />
       ) : (
