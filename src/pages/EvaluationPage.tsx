@@ -39,7 +39,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
     loadExistingData();
   }, [applicantName, user.studentId]);
 
-  // 문제 2 해결: 데이터 저장 함수
+  // 문제 2 해결: 데이터 저장 함수 (이 함수가 DB로 데이터를 보냅니다!)
   const handleSave = async () => {
     if (!applicantName) return alert('지원자 이름을 입력해주세요.');
     
@@ -135,7 +135,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
               />
             </div>
 
-            {/* 저장 버튼 */}
+            {/* ✨ 저장 버튼 (이게 DB로 데이터를 쏩니다!) ✨ */}
             <button 
               onClick={handleSave}
               disabled={isLoading}

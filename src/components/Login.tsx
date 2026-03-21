@@ -29,7 +29,7 @@ export const Login: React.FC = () => {
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
               className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white transition-all text-lg"
-              placeholder="예: 10204"
+              placeholder="예: 20723"
               required
             />
           </div>
@@ -40,7 +40,7 @@ export const Login: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white transition-all text-lg"
-              placeholder="예: 김민준"
+              placeholder="예: 유이준"
               required
             />
           </div>
