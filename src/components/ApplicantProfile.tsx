@@ -8,7 +8,7 @@ export const ApplicantProfile: React.FC = () => {
 
   if (!applicant) return null;
 
-  // 부서별 타원형 배지 색상 전처리 로직
+  // Badge
   const getDepartmentStyle = (dept: string) => {
     switch (dept) {
       case '철학부': return { backgroundColor: '#EAD1DC', color: '#374151' };
@@ -21,10 +21,10 @@ export const ApplicantProfile: React.FC = () => {
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8">
-      {/* 상단 프로필 및 인적사항 영역 */}
+      {/* Header */}
       <div className="flex justify-between items-start mb-8 border-b border-gray-100 dark:border-slate-700 pb-8">
         
-        {/* 좌측: 학번/이름 및 세로 나열된 인적사항 */}
+        {/* Left */}
         <div className="flex flex-col sm:flex-row sm:items-start gap-6">
           <div className="w-20 h-20 bg-blue-50 dark:bg-slate-700 rounded-full flex items-center justify-center text-blue-500 dark:text-blue-400 shrink-0 mt-1">
             <User size={36} />
@@ -34,7 +34,7 @@ export const ApplicantProfile: React.FC = () => {
               {applicant.studentId} {applicant.name}
               <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-full font-bold">지원자</span>
             </h2>
-            {/* 세로 줄바꿈 적용된 정보란 */}
+            {/* User Information */}
             <div className="text-gray-500 dark:text-slate-400 mt-4 font-medium flex flex-col gap-2 text-[15px]">
               <span>진로: <span className="text-gray-700 dark:text-slate-300">{applicant.career}</span></span>
               <span>연락처: <span className="text-gray-700 dark:text-slate-300">{applicant.phone}</span></span>
@@ -44,7 +44,7 @@ export const ApplicantProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* 우측 상단: 희망 부서 배지 (타원형 디자인 및 색상 적용) */}
+        {/* Upper */}
         <div 
           className="px-5 py-2 rounded-full font-extrabold text-sm shadow-sm whitespace-nowrap tracking-wide"
           style={getDepartmentStyle(applicant.department)}
@@ -53,7 +53,7 @@ export const ApplicantProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* 하단: 서술형/논술식 답변 영역 */}
+      {/* Downer */}
       <div className="space-y-8">
         <Section title="자기소개" content={applicant.introduction} />
         <Section title="동아리 지원 계기" content={applicant.motivation} />

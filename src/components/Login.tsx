@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { useStore } from '../store/useStore';
 import { Delete } from 'lucide-react';
@@ -13,6 +13,17 @@ export const Login = () => {
   const [expectedPin, setExpectedPin] = useState<string | null>(null);
   const [enteredPin, setEnteredPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (isPinModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { 
+      document.body.style.overflow = 'unset'; 
+    };
+  }, [isPinModalOpen]);
 
   const handleNext = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,22 +80,22 @@ export const Login = () => {
   };
 
   return (
-    // 배경: 이미지와 동일한 짙은 네이비/블랙
+    // Background & Centering
     <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-4">
       
-      {/* 로고 중앙 배치 */}
+      {/* Center Logo */}
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-black tracking-tighter text-blue-500">
           L-INK <span className="text-white font-light">Eval</span>
         </h1>
       </div>
 
-      {/* 로그인 폼 (이미지 디자인 완벽 반영) */}
+      {/* Login Form */}
       <form onSubmit={handleNext} className="bg-[#1e293b] p-8 rounded-2xl w-full max-w-md shadow-2xl border border-slate-700/50">
         <h2 className="text-xl font-bold text-center mb-8 text-white">면접관 로그인</h2>
         
         <div className="space-y-6">
-          {/* 학번 입력란 (위로 이동) */}
+          {/* Number */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">학번</label>
             <input 
@@ -96,7 +107,7 @@ export const Login = () => {
             />
           </div>
           
-          {/* 이름 입력란 (아래로 이동) */}
+          {/* Name */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">이름</label>
             <input 
@@ -108,7 +119,7 @@ export const Login = () => {
             />
           </div>
 
-          {/* 파란색 버튼 */}
+          {/* Blue Button */}
           <button 
             type="submit" 
             className="w-full py-3.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl font-bold transition-colors text-base mt-2"
@@ -118,7 +129,7 @@ export const Login = () => {
         </div>
       </form>
 
-      {/* 2차 비밀번호 팝업창 (다크 테마 적용) */}
+      {/* PW2 PopUp */}
       {isPinModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#1e293b] rounded-2xl p-8 shadow-2xl border border-slate-700 w-full max-w-sm relative">

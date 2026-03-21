@@ -14,7 +14,6 @@ export const ChatSection = ({ userName }: { userName: string }) => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 스크롤을 항상 최신 메시지(맨 아래)로 내리는 함수
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -24,7 +23,6 @@ export const ChatSection = ({ userName }: { userName: string }) => {
   }, [messages]);
 
   useEffect(() => {
-    // 1. 기존 채팅 기록 불러오기
     const fetchMessages = async () => {
       const { data, error } = await supabase
         .from('chat_messages')
@@ -36,7 +34,6 @@ export const ChatSection = ({ userName }: { userName: string }) => {
 
     fetchMessages();
 
-    // 2. 실시간 채팅 감지
     const channel = supabase
       .channel('chat-channel')
       .on(
@@ -53,7 +50,6 @@ export const ChatSection = ({ userName }: { userName: string }) => {
     };
   }, []);
 
-  // 메시지 전송 함수
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
 
@@ -64,7 +60,7 @@ export const ChatSection = ({ userName }: { userName: string }) => {
     if (error) {
       console.error('메시지 전송 실패:', error);
     } else {
-      setNewMessage(''); // 입력창 비우기
+      setNewMessage('');
     }
   };
 
@@ -75,13 +71,13 @@ export const ChatSection = ({ userName }: { userName: string }) => {
         <h2 className="font-bold">실시간 채팅방</h2>
       </div>
       
-      {/* 채팅 목록 영역 */}
+      {/* Chat Message List */}
       <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-[#f8fafc]">
         {messages.map((msg) => (
           <div key={msg.id} className={`flex flex-col ${msg.user_name === userName ? 'items-end' : 'items-start'}`}>
-            {/* 유저 이름 표시 */}
+            {/* User Name */}
             <span className="text-xs text-gray-500 mb-1 px-1">{msg.user_name}</span>
-            {/* 말풍선 */}
+            {/* Text Bubble */}
             <div className={`px-4 py-2 rounded-2xl max-w-[85%] text-sm shadow-sm ${
               msg.user_name === userName 
                 ? 'bg-blue-500 text-white rounded-tr-sm' 
@@ -94,7 +90,7 @@ export const ChatSection = ({ userName }: { userName: string }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* 입력 영역 */}
+      {/* Typing Section */}
       <div className="p-3 bg-white border-t border-gray-200 flex gap-2">
         <input
           type="text"

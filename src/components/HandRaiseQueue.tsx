@@ -1,22 +1,11 @@
 import React, { useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { Hand, CheckCircle2 } from 'lucide-react';
-// import { supabase } from '../utils/supabase'; // 실제 연동 시 주석 해제
 
 export const HandRaiseQueue: React.FC = () => {
   const { currentUser, queue, updateQueue } = useStore();
 
-  // 실제 Supabase 실시간 구독 뼈대
   useEffect(() => {
-    /*
-    const channel = supabase.channel('queue_channel')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'queue' }, payload => {
-        // 서버에서 큐 리스트를 다시 불러오거나 업데이트
-        // fetchQueue(); 
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-    */
   }, []);
 
   const handleRaiseHand = () => {
@@ -31,12 +20,12 @@ export const HandRaiseQueue: React.FC = () => {
       timestamp: Date.now(),
     };
     
-    // DB INSERT 로직 작성 위치
+    // DB INSERT
     updateQueue([...queue, newItem]);
   };
 
   const handleComplete = (queueId: string) => {
-    // DB DELETE 로직 작성 위치
+    // DB DELETE
     updateQueue(queue.filter(q => q.id !== queueId));
   };
 

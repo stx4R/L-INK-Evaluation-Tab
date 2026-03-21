@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
-import { Users, Search, Calculator } from 'lucide-react'; // Calculator 아이콘 추가
+import { Users, Search, Calculator } from 'lucide-react';
 
 interface Evaluation {
   id: string;
@@ -15,7 +15,7 @@ interface Evaluation {
 export default function AdminPage() {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState(''); // ✨ 검색어 상태 관리
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchAllEvaluations = async () => {
@@ -33,13 +33,11 @@ export default function AdminPage() {
     fetchAllEvaluations();
   }, []);
 
-  // ✨ 학번(또는 이름, 면접관 등)으로 필터링
   const filteredEvaluations = evaluations.filter((evalData) => 
     evalData.applicant_name.includes(searchTerm) || 
     evalData.evaluator_id.includes(searchTerm)
   );
 
-  // ✨ 필터링된 평가들의 평균 점수 계산
   const averageScore = filteredEvaluations.length > 0 
     ? (filteredEvaluations.reduce((sum, curr) => sum + curr.score, 0) / filteredEvaluations.length).toFixed(1)
     : '0.0';
@@ -48,7 +46,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-50 p-6 md:p-10">
       <div className="max-w-6xl mx-auto">
         
-        {/* 상단 헤더 영역 */}
+        {/* Header*/}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
           <div className="flex items-center gap-3">
             <div className="bg-blue-600 p-3 rounded-xl shadow-md">
@@ -60,7 +58,7 @@ export default function AdminPage() {
             </div>
           </div>
           
-          {/* ✨ 총 개수 및 평균 점수 표시 카드 */}
+          {/* Average Score Cards */}
           <div className="flex gap-3">
             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200">
               <span className="text-sm text-gray-500 font-medium">조회된 평가</span>
@@ -74,7 +72,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* ✨ 검색창 영역 */}
+        {/* Search Section */}
         <div className="mb-6 relative">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
@@ -88,7 +86,7 @@ export default function AdminPage() {
           />
         </div>
 
-        {/* 데이터 테이블 영역 */}
+        {/* DataTable Section */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">

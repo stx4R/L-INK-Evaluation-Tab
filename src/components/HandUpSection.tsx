@@ -34,7 +34,6 @@ export const HandUpSection = ({ userName }: { userName: string }) => {
   };
 
   return (
-    // ✨ 디자인 변경: bg-white -> bg-slate-50, shadow-md -> shadow-sm, 테두리 부드럽게
     <div className="p-5 bg-slate-50 rounded-2xl shadow-sm border border-slate-200">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold flex items-center gap-2 text-slate-800">

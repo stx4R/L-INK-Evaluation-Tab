@@ -3,7 +3,7 @@ import { supabase } from '../utils/supabase';
 import { HandUpSection } from '../components/HandUpSection'; 
 import { Save, LogOut, User, ClipboardList, KeyRound, Delete } from 'lucide-react';
 
-// 로그인 시 전달받은 유저 정보 타입
+// User Info Type
 interface UserInfo {
   name: string;
   studentId: string;
@@ -15,12 +15,12 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
   const [comment, setComment] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 2차 비번 변경 관련 상태
+  // PW2 Change Status
   const [isChangePinOpen, setIsChangePinOpen] = useState(false);
   const [newPin, setNewPin] = useState('');
   const [pinMessage, setPinMessage] = useState('');
 
-  // 페이지 접속 시 해당 면접관이 이전에 썼던 데이터가 있는지 불러오기
+  // Loading last Password
   useEffect(() => {
     const loadExistingData = async () => {
       if (!applicantName) return; 
@@ -43,7 +43,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
     loadExistingData();
   }, [applicantName, user.studentId]);
 
-  // 평가 내용 DB 저장 함수
+  // Saving on DB Function
   const handleSave = async () => {
     if (!applicantName) return alert('지원자 이름을 입력해주세요.');
     
@@ -68,20 +68,18 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
     }
   };
 
-  // 2차 비번 변경 로직: 키패드 클릭
   const handlePinClick = (num: string) => {
     if (newPin.length < 4) {
       const updatedPin = newPin + num;
       setNewPin(updatedPin);
       
-      // 4자리 모두 입력 시 자동 변경 시도
       if (updatedPin.length === 4) {
         handleChangePin(updatedPin);
       }
     }
   };
 
-  // 2차 비번 DB 업데이트 함수
+  // 2PW Change Function
   const handleChangePin = async (pin: string) => {
     const { error } = await supabase
       .from('evaluators')
@@ -90,7 +88,6 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
       
     if (!error) {
       setPinMessage('✅ 비밀번호가 성공적으로 변경되었습니다!');
-      // 1.5초 뒤 팝업 닫기 및 초기화
       setTimeout(() => { 
         setIsChangePinOpen(false); 
         setNewPin(''); 
@@ -98,17 +95,17 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
       }, 1500);
     } else {
       setPinMessage('❌ 변경 실패. 다시 시도해주세요.');
-      setNewPin(''); // 틀렸을 시 다시 입력하도록 비움
+      setNewPin('');
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      {/* 2차 비밀번호 변경 모달 팝업 */}
+      {/* Change Pin Modal */}
       {isChangePinOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-sm relative border border-gray-200">
-            {/* 닫기 버튼 */}
+            {/* Close button */}
             <button 
               onClick={() => { setIsChangePinOpen(false); setNewPin(''); setPinMessage(''); }} 
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition"
@@ -122,7 +119,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
               <p className="text-sm text-gray-500 mt-1">새로 사용할 숫자 4자리를 입력하세요.</p>
             </div>
             
-            {/* 핀 번호 입력 표시창 (동그라미) */}
+            {/* Pin Dots */}
             <div className="flex justify-center gap-3 mb-6">
               {[0, 1, 2, 3].map((i) => (
                 <div 
@@ -132,10 +129,10 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
               ))}
             </div>
             
-            {/* 결과 메시지 */}
+            {/* Result Message */}
             {pinMessage && <p className="text-center text-sm mb-4 font-bold text-blue-600">{pinMessage}</p>}
 
-            {/* 숫자 키패드 (2x5 배열) */}
+            {/* Keypad */}
             <div className="grid grid-cols-5 gap-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
                 <button
@@ -148,7 +145,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
               ))}
             </div>
             
-            {/* 지우기 버튼 */}
+            {/* Erase button */}
             <button 
               onClick={() => setNewPin(newPin.slice(0, -1))} 
               className="w-full mt-4 p-3 text-gray-500 flex justify-center items-center gap-2 hover:bg-gray-100 rounded-lg transition font-medium"
@@ -160,7 +157,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
       )}
 
       <div className="max-w-4xl mx-auto">
-        {/* 상단 헤더 영역 */}
+        {/* Header */}
         <div className="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center gap-3">
             <div className="bg-blue-100 p-2 rounded-full">
@@ -172,7 +169,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
             </div>
           </div>
           
-          {/* 우측 버튼 그룹: 2차 비번 변경 & 로그아웃 */}
+          {/* PW2 & Logout */}
           <div className="flex items-center gap-2 md:gap-4">
             <button 
               onClick={() => setIsChangePinOpen(true)}
@@ -191,12 +188,12 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
           </div>
         </div>
 
-        {/* 실시간 손들기 섹션 */}
+        {/* HandsUp */}
         <div className="mb-8">
           <HandUpSection userName={user.name} />
         </div>
 
-        {/* 평가 입력 섹션 */}
+        {/* CommentsWrite */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="bg-blue-600 p-4 text-white flex items-center gap-2">
             <ClipboardList className="w-5 h-5" />
@@ -204,7 +201,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
           </div>
           
           <div className="p-6 space-y-6">
-            {/* 지원자 이름 */}
+            {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">지원자 이름</label>
               <input 
@@ -216,7 +213,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
               />
             </div>
 
-            {/* 점수 입력 */}
+            {/* Score */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">평가 점수 (0~100)</label>
               <input 
@@ -227,7 +224,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
               />
             </div>
 
-            {/* 코멘트 입력 */}
+            {/* Comment */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">종합 의견</label>
               <textarea 
@@ -239,7 +236,7 @@ export default function EvaluationPage({ user, onLogout }: { user: UserInfo, onL
               />
             </div>
 
-            {/* 저장 버튼 (DB로 데이터 전송) */}
+            {/* Save button */}
             <button 
               onClick={handleSave}
               disabled={isLoading}

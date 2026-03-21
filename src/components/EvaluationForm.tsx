@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { Save, Database } from 'lucide-react'; // Database 아이콘 추가
-import { supabase } from '../utils/supabase'; // 🚀 Supabase 불러오기
+import { Save, Database } from 'lucide-react';
+import { supabase } from '../utils/supabase';
 
 export const EvaluationForm: React.FC = () => {
   const { currentUser, currentApplicantId, evaluations, saveEvaluation } = useStore();
@@ -12,14 +12,14 @@ export const EvaluationForm: React.FC = () => {
   const [score, setScore] = useState(existingData.score);
   const [comment, setComment] = useState(existingData.comment);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDbSaving, setIsDbSaving] = useState(false); // 🚀 DB 저장 상태 관리
+  const [isDbSaving, setIsDbSaving] = useState(false);
 
   useEffect(() => {
     setScore(existingData.score);
     setComment(existingData.comment);
   }, [currentApplicantId]);
 
-  // (기존) 로컬 상태에 자동 저장
+  // AutoSave Effect
   useEffect(() => {
     setIsSaving(true);
     const timeoutId = setTimeout(() => {
@@ -37,7 +37,6 @@ export const EvaluationForm: React.FC = () => {
     return () => clearTimeout(timeoutId);
   }, [score, comment, currentApplicantId, currentUser, saveEvaluation]);
 
-  // 🚀 (신규) DB로 쏘는 저장 함수
   const handleDbSave = async () => {
     if (!currentUser || !currentApplicantId) {
       alert('평가할 지원자를 먼저 선택해주세요.');
@@ -50,7 +49,7 @@ export const EvaluationForm: React.FC = () => {
       .upsert({
         evaluator_id: currentUser.studentId,
         evaluator_name: currentUser.name,
-        applicant_name: currentApplicantId, // 지원자 이름 또는 ID
+        applicant_name: currentApplicantId,
         score: score,
         comment: comment,
         updated_at: new Date().toISOString(),
@@ -101,7 +100,7 @@ export const EvaluationForm: React.FC = () => {
           />
         </div>
 
-        {/* 🚀 파란색 DB 제출 버튼 */}
+        {/* Submit Button */}
         <button 
           onClick={handleDbSave}
           disabled={isDbSaving || !currentApplicantId}
