@@ -1,39 +1,71 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
-import { Hand } from 'lucide-react'; // 아이콘 추가
+import { Hand } from 'lucide-react'; // 아이콘
 
 export const HandUpSection = ({ userName }: { userName: string }) => {
   const [raisedHands, setRaisedHands] = useState<any[]>([]);
   const [myHand, setMyHand] = useState(false);
 
   useEffect(() => {
+    // 1. 현재 손 든 사람들 목록 가져오기
     const fetchHands = async () => {
-      const { data } = await supabase.from('hands_up').select('*').eq('is_raised', true);
+      const { data, error } = await supabase
+        .from('hands_up')
+        .select('*')
+        .eq('is_raised', true);
+
+      if (error) {
+        console.error('데이터 불러오기 에러:', error);
+        return;
+      }
+
       if (data) {
         setRaisedHands(data);
-        // 내가 손을 들고 있는지 확인
         setMyHand(data.some(h => h.evaluator_name === userName));
       }
     };
+    
+    // 컴포넌트 마운트 시 최초 1회 실행
     fetchHands();
 
+    // 2. 실시간 감지 채널 설정
     const channel = supabase
-      .channel('schema-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'hands_up' }, 
-      () => {
-        fetchHands();
-      })
-      .subscribe();
+      .channel('hands-up-channel') // 채널 이름 구체화
+      .on(
+        'postgres_changes', 
+        { event: '*', schema: 'public', table: 'hands_up' }, 
+        (payload) => {
+          console.log('🔥 [실시간 감지됨!] 누군가 상태를 바꿨습니다:', payload);
+          fetchHands(); // 변화가 감지되면 서버에서 최신 목록 다시 긁어오기
+        }
+      )
+      .subscribe((status) => {
+        // 실시간 연결이 제대로 되었는지 확인하는 로그
+        console.log('📡 [실시간 연결 상태]:', status); 
+      });
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { 
+      supabase.removeChannel(channel); 
+    };
   }, [userName]);
 
+  // 손들기 버튼 클릭 함수
   const toggleHand = async () => {
+    const newState = !myHand; // 변경될 상태
+    setMyHand(newState); // 내 화면 즉시 반영 (반응속도 향상)
+
     const { error } = await supabase
       .from('hands_up')
-      .upsert({ evaluator_name: userName, is_raised: !myHand }, { onConflict: 'evaluator_name' });
+      .upsert(
+        { evaluator_name: userName, is_raised: newState }, 
+        { onConflict: 'evaluator_name' }
+      );
     
-    if (!error) setMyHand(!myHand);
+    if (error) {
+      console.error('상태 업데이트 실패:', error);
+      setMyHand(!newState); // 실패 시 원래대로 복구
+      alert('오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -46,7 +78,7 @@ export const HandUpSection = ({ userName }: { userName: string }) => {
         <button 
           onClick={toggleHand}
           className={`px-4 py-2 rounded-md font-medium transition ${
-            myHand ? 'bg-red-500 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
+            myHand ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
         >
           {myHand ? '손 내리기' : '손 들기'}
