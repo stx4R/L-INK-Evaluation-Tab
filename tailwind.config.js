@@ -2,16 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 폰트 및 기본 스타일 설정 */
+/* Font */
 @layer base {
   body {
     @apply antialiased text-slate-900 bg-slate-50;
-    /* 토스 느낌의 깔끔한 폰트 설정 */
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   }
 }
 
-/* 토스 스타일의 부드러운 컴포넌트 공통 스타일 */
+/* Style */
 @layer components {
   .toss-card {
     @apply bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8;
@@ -26,7 +25,7 @@
   }
 }
 
-/* 스크롤바 커스텀 (가독성을 위해 슬림하게) */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }

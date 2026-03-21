@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useStore } from '../store/useStore';
-import { ShieldCheck, Delete } from 'lucide-react';
+import { Delete } from 'lucide-react';
 
 export const Login = () => {
-  const login = useStore((state) => state.login); // 스토어 로그인 함수 (zustand 설정에 맞게 변경)
+  const login = useStore((state) => state.login); // 스토어의 로그인 함수
   const [name, setName] = useState('');
   const [studentId, setStudentId] = useState('');
   
@@ -51,16 +51,11 @@ export const Login = () => {
       const newPin = enteredPin + num;
       setEnteredPin(newPin);
 
-      // 4자리가 모두 입력되었을 때
+      // 4자리가 모두 입력되었을 때 자동 검증
       if (newPin.length === 4) {
         verifyOrSetupPin(newPin);
       }
     }
-  };
-
-  // 핀번호 지우기
-  const handleDelete = () => {
-    setEnteredPin((prev) => prev.slice(0, -1));
   };
 
   // 2단계: 핀번호 검증 및 로그인/설정
@@ -78,64 +73,90 @@ export const Login = () => {
       if (pin === expectedPin) {
         login({ name, studentId }); // 로그인 성공
       } else {
-        setErrorMsg('비밀번호가 틀렸습니다.');
+        setErrorMsg('비밀번호가 일치하지 않습니다.');
         setEnteredPin(''); // 초기화
       }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      {/* 1단계 기본 폼 */}
-      <form onSubmit={handleNext} className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">면접관 로그인</h2>
-        <div className="space-y-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center p-4">
+      {/* 1단계 기본 로그인 폼 (기존 디자인 스타일 적용) */}
+      <form onSubmit={handleNext} className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-8 text-gray-900 dark:text-white">면접관 로그인</h2>
+        
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-3 border rounded-xl" placeholder="홍길동" />
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">이름</label>
+            <input 
+              type="text" 
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" 
+              placeholder="이름을 입력하세요" 
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">학번</label>
-            <input type="text" value={studentId} onChange={(e) => setStudentId(e.target.value)} className="w-full p-3 border rounded-xl" placeholder="20240001" />
+            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">학번</label>
+            <input 
+              type="text" 
+              value={studentId} 
+              onChange={(e) => setStudentId(e.target.value)} 
+              className="w-full px-5 py-4 rounded-2xl bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-600 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" 
+              placeholder="학번을 입력하세요" 
+            />
           </div>
-          <button type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition">
-            다음 단계
+          <button 
+            type="submit" 
+            className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl font-bold transition-colors text-lg mt-4"
+          >
+            다음
           </button>
         </div>
       </form>
 
-      {/* 2차 비밀번호 팝업창 */}
+      {/* 2차 비밀번호 팝업창 (기존 테마에 맞춘 차분한 디자인) */}
       {isPinModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-sm relative">
-            <button onClick={() => setIsPinModalOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700">✕</button>
-            <div className="text-center mb-6">
-              <ShieldCheck className="w-12 h-12 text-blue-500 mx-auto mb-2" />
-              <h3 className="text-xl font-bold text-gray-800">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] p-8 shadow-xl border border-gray-100 dark:border-slate-700 w-full max-w-sm relative">
+            <button 
+              onClick={() => { setIsPinModalOpen(false); setEnteredPin(''); setErrorMsg(''); }} 
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              ✕
+            </button>
+            
+            <div className="text-center mb-8 mt-2">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                 {pinMode === 'setup' ? '2차 비밀번호 설정' : '2차 비밀번호 입력'}
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {pinMode === 'setup' ? '앞으로 사용할 숫자 4자리를 설정하세요.' : '설정하신 숫자 4자리를 입력하세요.'}
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-2">
+                {pinMode === 'setup' ? '사용할 숫자 4자리를 설정해주세요.' : '설정하신 숫자 4자리를 입력해주세요.'}
               </p>
             </div>
 
-            {/* 입력 표시창 */}
-            <div className="flex justify-center gap-3 mb-6">
+            {/* 입력 표시창 (동그라미) */}
+            <div className="flex justify-center gap-4 mb-8">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className={`w-4 h-4 rounded-full ${i < enteredPin.length ? 'bg-blue-600' : 'bg-gray-200'}`} />
+                <div 
+                  key={i} 
+                  className={`w-4 h-4 rounded-full transition-colors ${
+                    i < enteredPin.length ? 'bg-blue-500' : 'bg-gray-200 dark:bg-slate-700'
+                  }`} 
+                />
               ))}
             </div>
             
             {/* 에러 메시지 */}
-            {errorMsg && <p className="text-red-500 text-center text-sm mb-4 font-bold">{errorMsg}</p>}
+            {errorMsg && <p className="text-red-500 text-center text-sm mb-6 font-medium">{errorMsg}</p>}
 
             {/* 2x5 키패드 */}
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-3">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
                 <button
                   key={num}
                   onClick={() => handlePinClick(num.toString())}
-                  className="py-4 bg-gray-50 rounded-xl text-xl font-bold text-gray-800 hover:bg-blue-50 hover:text-blue-600 transition active:scale-95"
+                  className="py-4 bg-gray-50 dark:bg-slate-900 rounded-2xl text-xl font-bold text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors active:scale-95 border border-transparent dark:border-slate-700"
                 >
                   {num}
                 </button>
@@ -143,8 +164,11 @@ export const Login = () => {
             </div>
             
             {/* 지우기 버튼 */}
-            <div className="mt-2 flex justify-end">
-              <button onClick={handleDelete} className="p-3 text-gray-500 hover:text-red-500 flex items-center gap-1 font-medium">
+            <div className="mt-4 flex justify-end">
+              <button 
+                onClick={() => setEnteredPin((prev) => prev.slice(0, -1))} 
+                className="p-3 text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-white flex items-center gap-1.5 font-medium transition-colors"
+              >
                 <Delete className="w-5 h-5" /> 지우기
               </button>
             </div>
