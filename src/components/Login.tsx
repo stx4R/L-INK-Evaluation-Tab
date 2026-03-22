@@ -29,126 +29,124 @@ export const Login = () => {
     e.preventDefault();
     if (!name || !studentId) return alert('학번과 이름을 모두 입력해주세요.');
 
+    // Login flow
+    const { data: banData } = await supabase
+      .from('banned_users')
+      .select('*')
+      .in('student_id', [studentId, name]);
+
+    if (banData && banData.length > 0) {
+      // Ban record
+      const activeBan = banData.find(b => b.banned_until && new Date(b.banned_until).getTime() > Date.now());
+      if (activeBan) {
+        const diff = new Date(activeBan.banned_until).getTime() - Date.now();
+        const secs = Math.ceil(diff / 1000);
+        return alert(`🚨 접속이 제한된 계정입니다. (${secs}초 후 다시 시도해주세요.)`);
+      }
+    }
+
+    // Pin check
     const { data } = await supabase
       .from('evaluators')
       .select('*')
       .eq('student_id', studentId)
+      .eq('name', name)
       .single();
 
-    if (data) {
-      if (data.pin_code) {
-        setPinMode('verify');
-        setExpectedPin(data.pin_code);
-      } else {
-        setPinMode('setup');
-      }
+    if (data && data.pin) {
+      setPinMode('verify');
+      setExpectedPin(data.pin);
+      setIsPinModalOpen(true);
     } else {
       setPinMode('setup');
+      setExpectedPin(null);
+      setIsPinModalOpen(true);
     }
-    
-    setEnteredPin('');
-    setErrorMsg('');
-    setIsPinModalOpen(true);
   };
 
   const handlePinClick = (num: string) => {
     if (enteredPin.length < 4) {
-      const newPin = enteredPin + num;
-      setEnteredPin(newPin);
-      if (newPin.length === 4) {
-        verifyOrSetupPin(newPin);
-      }
+      setEnteredPin((prev) => prev + num);
+      setErrorMsg('');
     }
   };
 
-  const verifyOrSetupPin = async (pin: string) => {
+  useEffect(() => {
+    if (enteredPin.length === 4) {
+      setTimeout(() => submitPin(), 200);
+    }
+  }, [enteredPin]);
+
+  const submitPin = async () => {
     if (pinMode === 'setup') {
-      const { error } = await supabase
-        .from('evaluators')
-        .upsert({ student_id: studentId, name: name, pin_code: pin });
-      
-      if (error) return setErrorMsg('비밀번호 설정 중 오류가 발생했습니다.');
-      login({ name, studentId });
-    } else {
-      if (pin === expectedPin) {
-        login({ name, studentId });
+      const { error } = await supabase.from('evaluators').upsert({
+        student_id: studentId,
+        name: name,
+        pin: enteredPin
+      }, { onConflict: 'student_id' });
+
+      if (error) {
+        setErrorMsg('PIN 등록 중 오류가 발생했습니다.');
+        setEnteredPin('');
       } else {
-        setErrorMsg('비밀번호가 일치하지 않습니다.');
+        login({ studentId, name });
+        setIsPinModalOpen(false);
+      }
+    } else {
+      if (enteredPin === expectedPin) {
+        login({ studentId, name });
+        setIsPinModalOpen(false);
+      } else {
+        setErrorMsg('PIN 코드가 일치하지 않습니다.');
         setEnteredPin('');
       }
     }
   };
 
   return (
-    // Background & Centering
-    <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-4">
-      
-      {/* Center Logo */}
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-black tracking-tighter text-blue-500">
-          L-INK <span className="text-white font-light">Eval</span>
-        </h1>
+    <div className="min-h-screen bg-[#f2f4f6] flex flex-col items-center justify-center p-6 relative">
+      <div className="w-full max-w-[400px] bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 relative z-10">
+        <div className="mb-8 text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">L-INK 면접 시스템</h1>
+          <p className="text-gray-500 text-sm">면접관 정보를 입력해주세요.</p>
+        </div>
+        <form onSubmit={handleNext} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">학번 (예: 10204)</label>
+            <input
+              type="text"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="학번을 입력하세요"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">이름 (예: 홍길동)</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="이름을 입력하세요"
+            />
+          </div>
+          <button type="submit" className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition mt-4">
+            다음으로
+          </button>
+        </form>
       </div>
 
-      {/* Login Form */}
-      <form onSubmit={handleNext} className="bg-[#1e293b] p-8 rounded-2xl w-full max-w-md shadow-2xl border border-slate-700/50">
-        <h2 className="text-xl font-bold text-center mb-8 text-white">면접관 로그인</h2>
-        
-        <div className="space-y-6">
-          {/* Number */}
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">학번</label>
-            <input 
-              type="text" 
-              value={studentId} 
-              onChange={(e) => setStudentId(e.target.value)} 
-              className="w-full px-4 py-3 rounded-xl bg-[#0f172a] border border-slate-700 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" 
-              placeholder="학번을 입력하세요" 
-            />
-          </div>
-          
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">이름</label>
-            <input 
-              type="text" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
-              className="w-full px-4 py-3 rounded-xl bg-[#0f172a] border border-slate-700 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" 
-              placeholder="이름을 입력하세요" 
-            />
-          </div>
-
-          {/* Blue Button */}
-          <button 
-            type="submit" 
-            className="w-full py-3.5 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-xl font-bold transition-colors text-base mt-2"
-          >
-            다음
-          </button>
-        </div>
-      </form>
-
-      {/* PW2 PopUp */}
       {isPinModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#1e293b] rounded-2xl p-8 shadow-2xl border border-slate-700 w-full max-w-sm relative">
-            <button 
-              onClick={() => { setIsPinModalOpen(false); setEnteredPin(''); setErrorMsg(''); }} 
-              className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors"
-            >
-              ✕
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-[#1e293b] p-8 rounded-[32px] shadow-2xl w-[320px] animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-bold text-white text-center mb-2">
+              {pinMode === 'setup' ? '새 PIN 코드 설정' : 'PIN 코드 입력'}
+            </h2>
+            <p className="text-slate-400 text-sm text-center mb-6">
+              {pinMode === 'setup' ? '앞으로 사용할 4자리 숫자를 입력하세요.' : '등록된 4자리 숫자를 입력하세요.'}
+            </p>
             
-            <div className="text-center mb-8 mt-2">
-              <h3 className="text-xl font-bold text-white">
-                {pinMode === 'setup' ? '2차 비밀번호 설정' : '2차 비밀번호 입력'}
-              </h3>
-              <p className="text-sm text-slate-400 mt-2">
-                {pinMode === 'setup' ? '사용할 숫자 4자리를 설정해주세요.' : '설정하신 숫자 4자리를 입력해주세요.'}
-              </p>
-            </div>
-
             <div className="flex justify-center gap-4 mb-8">
               {[0, 1, 2, 3].map((i) => (
                 <div 
@@ -177,11 +175,17 @@ export const Login = () => {
             <div className="mt-4 flex justify-end">
               <button 
                 onClick={() => setEnteredPin((prev) => prev.slice(0, -1))} 
-                className="p-2 text-slate-400 hover:text-white flex items-center gap-1.5 font-medium transition-colors"
+                className="p-3 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500/20 active:scale-95 transition-all"
               >
-                <Delete className="w-5 h-5" /> 지우기
+                <Delete size={24} />
               </button>
             </div>
+            <button 
+              onClick={() => setIsPinModalOpen(false)} 
+              className="w-full mt-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-colors text-sm"
+            >
+              닫기
+            </button>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 export interface Interviewer {
   studentId: string;
   name: string;
+  isAdmin?: boolean;
 }
 
 export interface Applicant {
@@ -35,4 +36,12 @@ export interface Evaluation {
   interviewerId: string;
   score: number;
   comment: string;
+}
+
+export interface BugReport {
+  id: string;
+  author_name: string;
+  content: string;
+  status: 'pending' | 'resolved';
+  created_at: string;
 }

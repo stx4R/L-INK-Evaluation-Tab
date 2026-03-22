@@ -1,14 +1,60 @@
+// src/components/ApplicantProfile.tsx
 import React from 'react';
 import { useStore } from '../store/useStore';
-import { User, BookOpen } from 'lucide-react';
+import { User, BookOpen, Vote } from 'lucide-react';
+import { supabase } from '../utils/supabase';
 
 export const ApplicantProfile: React.FC = () => {
-  const { applicants, currentApplicantId } = useStore();
+  const { applicants, currentApplicantId, currentUser, applicantStatuses } = useStore();
   const applicant = applicants.find(a => a.id === currentApplicantId);
 
   if (!applicant) return null;
 
-  // Badge
+  // current status
+  const currentStatus = applicantStatuses[applicant.id] || '면접 대기';
+
+  // Admin status change
+  const handleStatusClick = async () => {
+    if (!currentUser?.isAdmin) return;
+
+    let nextStatus = '면접 대기';
+    if (currentStatus === '면접 대기') nextStatus = '면접중';
+    else if (currentStatus === '면접중') nextStatus = '면접 완료';
+    
+    await supabase.from('applicant_status').upsert({
+      applicant_id: applicant.id,
+      status: nextStatus
+    }, { onConflict: 'applicant_id' });
+  };
+
+  // Admin vote start
+  const startVote = async () => {
+    if (!window.confirm(`[${applicant.name}] 지원자에 대한 최종 투표를 시작하시겠습니까?`)) return;
+    
+    await supabase.from('active_votes').insert({
+      applicant_id: applicant.studentId,
+      applicant_name: applicant.name,
+      status: 'voting'
+    });
+  };
+
+  // Status badge styles
+  const getStatusStyle = () => {
+    switch(currentStatus) {
+      case '면접 대기': 
+        return { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-600 dark:text-red-400', led: 'bg-red-500' };
+      case '면접중': 
+        return { bg: 'bg-yellow-50 dark:bg-yellow-900/20', text: 'text-yellow-600 dark:text-yellow-400', led: 'bg-yellow-500' };
+      case '면접 완료': 
+        return { bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-600 dark:text-green-400', led: 'bg-green-500' };
+      default: 
+        return { bg: 'bg-gray-50', text: 'text-gray-600', led: 'bg-gray-500' };
+    }
+  };
+
+  const statusStyle = getStatusStyle();
+
+  // Department badge
   const getDepartmentStyle = (dept: string) => {
     switch (dept) {
       case '철학부': return { backgroundColor: '#EAD1DC', color: '#374151' };
@@ -20,36 +66,61 @@ export const ApplicantProfile: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8">
+    <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8 transition-colors duration-300">
       {/* Header */}
       <div className="flex justify-between items-start mb-8 border-b border-gray-100 dark:border-slate-700 pb-8">
-        
-        {/* Left */}
-        <div className="flex flex-col sm:flex-row sm:items-start gap-6">
-          <div className="w-20 h-20 bg-blue-50 dark:bg-slate-700 rounded-full flex items-center justify-center text-blue-500 dark:text-blue-400 shrink-0 mt-1">
-            <User size={36} />
+        <div className="flex gap-6 items-center">
+          <div className="w-16 h-16 bg-blue-50 dark:bg-slate-700 rounded-2xl flex items-center justify-center text-blue-500 dark:text-blue-400 shadow-inner">
+            <User size={32} />
           </div>
-          <div className="flex flex-col">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              {applicant.studentId} {applicant.name}
-              <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-3 py-1 rounded-full font-bold">지원자</span>
-            </h2>
-            {/* User Information */}
-            <div className="text-gray-500 dark:text-slate-400 mt-4 font-medium flex flex-col gap-2 text-[15px]">
-              <span>진로: <span className="text-gray-700 dark:text-slate-300">{applicant.career}</span></span>
-              <span>연락처: <span className="text-gray-700 dark:text-slate-300">{applicant.phone}</span></span>
-              <span>학교 이메일: <span className="text-gray-700 dark:text-slate-300">{applicant.schoolEmail}</span></span>
-              <span>출신 중학교: <span className="text-gray-700 dark:text-slate-300">{applicant.middleSchool}</span></span>
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                {applicant.studentId} {applicant.name}
+              </h2>
+              <span className="px-3 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 text-sm font-bold rounded-lg">
+                지원자
+              </span>
+
+              {/* Live status letterbox */}
+              <div 
+                onClick={handleStatusClick}
+                className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-bold transition-all ${statusStyle.bg} ${statusStyle.text} ${currentUser?.isAdmin ? 'cursor-pointer hover:opacity-80' : ''}`}
+                title={currentUser?.isAdmin ? "클릭하여 면접 상태 변경" : ""}
+              >
+                <div className={`w-2 h-2 rounded-full ${statusStyle.led} animate-pulse`} />
+                {currentStatus}
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-sm font-semibold text-gray-500 dark:text-slate-400">
+              <span>{applicant.career}</span>
+              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+              <span>{applicant.phone}</span>
+              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+              <span>{applicant.schoolEmail}</span>
             </div>
           </div>
         </div>
 
-        {/* Upper */}
-        <div 
-          className="px-5 py-2 rounded-full font-extrabold text-sm shadow-sm whitespace-nowrap tracking-wide"
-          style={getDepartmentStyle(applicant.department)}
-        >
-          {applicant.department}
+        {/* Right Badge */}
+        <div className="flex flex-col items-end gap-3">
+          <div 
+            className="px-5 py-2 rounded-full font-extrabold text-sm shadow-sm whitespace-nowrap tracking-wide"
+            style={getDepartmentStyle(applicant.department)}
+          >
+            {applicant.department}
+          </div>
+          
+          {/* Admin Only */}
+          {currentUser?.isAdmin && (
+            <button 
+              onClick={startVote}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-md transition-colors animate-pulse"
+            >
+              <Vote size={18} />
+              최종 투표 열기
+            </button>
+          )}
         </div>
       </div>
 
@@ -71,10 +142,11 @@ export const ApplicantProfile: React.FC = () => {
 const Section = ({ title, content }: { title: string, content: string }) => (
   <div>
     <h3 className="text-sm font-bold text-blue-500 dark:text-blue-400 flex items-center gap-2 mb-3">
-      <BookOpen size={18} /> {title}
+      <BookOpen size={18} />
+      {title}
     </h3>
-    <p className="text-gray-700 dark:text-slate-300 leading-relaxed text-[15px] bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-700/50 whitespace-pre-wrap">
-      {content || "데이터가 아직 입력되지 않았습니다."}
-    </p>
+    <div className="p-5 bg-gray-50 dark:bg-slate-900 rounded-2xl text-gray-700 dark:text-slate-300 leading-relaxed text-[15px] border border-gray-100 dark:border-slate-700">
+      {content}
+    </div>
   </div>
 );

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { Save, Database } from 'lucide-react';
+import { Save, Database, AlertCircle } from 'lucide-react';
 import { supabase } from '../utils/supabase';
 
 export const EvaluationForm: React.FC = () => {
-  const { currentUser, currentApplicantId, evaluations, saveEvaluation } = useStore();
+  const { currentUser, currentApplicantId, evaluations, saveEvaluation, applicantStatuses } = useStore();
+  const status = applicantStatuses[currentApplicantId || ''] || '면접 대기';
   
   const evalKey = `${currentApplicantId}-${currentUser?.studentId}`;
   const existingData = evaluations[evalKey] || { score: 5, comment: '' };
@@ -63,6 +64,20 @@ export const EvaluationForm: React.FC = () => {
       alert('✅ 평가 결과가 데이터베이스에 성공적으로 제출되었습니다!');
     }
   };
+
+  if (status !== '면접중') {
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 p-10 flex flex-col items-center justify-center text-center h-[400px]">
+        <AlertCircle size={48} className="text-gray-300 dark:text-slate-600 mb-4" />
+        <h3 className="text-lg font-bold text-gray-500 dark:text-slate-400">
+          현재 '{status}' 상태입니다.
+        </h3>
+        <p className="text-sm text-gray-400 dark:text-slate-500 mt-2">
+          평가는 해당 지원자가 <span className="text-yellow-500 font-bold">'면접중'</span> 상태일 때만 작성할 수 있습니다.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-sm border border-gray-100 dark:border-slate-700 p-8">

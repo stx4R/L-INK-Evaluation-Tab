@@ -315,7 +315,9 @@ interface StoreState {
   currentApplicantId: string | null;
   queue: QueueItem[];
   evaluations: Record<string, Evaluation>;
-  
+  applicantStatuses: Record<string, string>;
+
+  setApplicantStatuses: (statuses: Record<string, string>) => void;
   login: (user: Interviewer) => void;
   logout: () => void;
   setCurrentApplicant: (id: string) => void;
@@ -329,11 +331,15 @@ export const useStore = create<StoreState>((set) => ({
   currentApplicantId: MOCK_APPLICANTS[0].id,
   queue: [],
   evaluations: {},
-
-  login: (user) => set({ currentUser: user }),
+  applicantStatuses: {},
+  login: (user: Interviewer) => {
+    const isAdmin = user.studentId === '20723' && user.name === '유이준';
+    set({ currentUser: { ...user, isAdmin } });
+  },
+  
   logout: () => set({ currentUser: null }),
   setCurrentApplicant: (id) => set({ currentApplicantId: id }),
-  updateQueue: (newQueue) => set({ queue: newQueue }),
+  updateQueue: (queue) => set({ queue }),
   saveEvaluation: (evaluation) => 
     set((state) => ({
       evaluations: {
@@ -341,4 +347,6 @@ export const useStore = create<StoreState>((set) => ({
         [`${evaluation.applicantId}-${evaluation.interviewerId}`]: evaluation
       }
     })),
+    setApplicantStatuses: (statuses) => set({ applicantStatuses: statuses }),
 }));
+
