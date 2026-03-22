@@ -123,7 +123,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Bug size={20} />
             </button>
             <span className={`text-sm font-semibold px-4 py-2 rounded-full hidden sm:block ${currentUser?.isAdmin ? 'bg-amber-100 text-amber-800' : 'text-gray-600 bg-gray-100'}`}>
-              {currentUser?.isAdmin ? '👑 어드민' : `${currentUser?.name} 면접관`}
+              {currentUser?.isAdmin ? '👑 Admin' : `${currentUser?.name} 면접관`}
             </span>
             <button onClick={() => setIsDark(!isDark)} className="p-2.5 rounded-full hover:bg-gray-100 text-gray-600">
               {isDark ? <Sun size={20} /> : <Moon size={20} />}
@@ -138,6 +138,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main className="max-w-7xl mx-auto px-6 pt-8">
         {children}
       </main>
+
+      <footer className="mt-16 w-full text-center py-12 text-sm text-gray-400 dark:text-slate-500 border-t border-gray-200 dark:border-slate-800">
+        <p>© 2026 L-INK. All rights reserved.</p>
+        <p className="mt-1">
+          Developed by{' '}
+          <a href="https://github.com/stx4R" target="_blank" rel="noopener noreferrer" className="font-bold text-gray-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-colors">
+            st4R
+          </a>
+        </p>
+      </footer>
 
       <FinalVoteModal />
       <BugReportModal 
