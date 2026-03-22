@@ -1,3 +1,4 @@
+// src/components/FinalVoteModal.tsx
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useStore } from '../store/useStore';
@@ -13,11 +14,13 @@ interface ActiveVote {
 export const FinalVoteModal = () => {
   const { currentUser } = useStore();
   const [currentVote, setCurrentVote] = useState<ActiveVote | null>(null);
+  const [showModal, setShowModal] = useState(false); // 팝업 표시 여부 독립 관리
   const [myVote, setMyVote] = useState<string | null>(null);
   const [voteCount, setVoteCount] = useState(0);
   const [results, setResults] = useState({ fail: 0, hold: 0, pass: 0 });
 
   useEffect(() => {
+    // 1. 초기 데이터 로드
     const fetchActiveVote = async () => {
       const { data } = await supabase
         .from('active_votes')
@@ -28,43 +31,56 @@ export const FinalVoteModal = () => {
         
       if (data && (data.status === 'voting' || data.status === 'finished')) {
         setCurrentVote(data);
+        setShowModal(true); // 데이터가 있으면 팝업 열기
         fetchMyVote(data.id);
         fetchVoteResults(data.id);
-      } else {
-        setCurrentVote(null);
       }
     };
 
     fetchActiveVote();
 
-    // Live Event
+    // 2. 투표 상태 실시간 구독
     const voteChannel = supabase.channel('active-votes-channel')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'active_votes' }, (payload) => {
-        setCurrentVote(payload.new as ActiveVote);
+        const newVote = payload.new as ActiveVote;
+        setCurrentVote(newVote);
+        setShowModal(true); // 새 투표 시작 시 팝업 열기
+        setMyVote(null);
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'active_votes' }, (payload) => {
         const updatedVote = payload.new as ActiveVote;
+        
         if (updatedVote.status === 'cancelled') {
           setCurrentVote(null);
+          setShowModal(false);
           setMyVote(null);
         } else {
-          setCurrentVote(updatedVote);
-          if (updatedVote.status === 'finished') fetchVoteResults(updatedVote.id);
+          // 이전 상태를 체크하여 status가 voting -> finished로 변할 때만 팝업을 다시 강제로 띄움
+          setCurrentVote(prev => {
+            if (prev?.status === 'voting' && updatedVote.status === 'finished') {
+              setShowModal(true);
+            }
+            return updatedVote;
+          });
+
+          if (updatedVote.status === 'finished') {
+            fetchVoteResults(updatedVote.id);
+          }
         }
       }).subscribe();
 
+    // 3. 투표 결과 실시간 카운트
     const resultsChannel = supabase.channel('vote-results-channel')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'vote_results' }, (payload) => {
-        if (currentVote?.status === 'voting') {
-          setVoteCount(prev => prev + 1);
-        }
+        // 결과가 추가될 때 데이터만 갱신하고, 팝업 상태(showModal)는 건드리지 않음
+        setVoteCount(prev => prev + 1);
       }).subscribe();
 
     return () => {
       supabase.removeChannel(voteChannel);
       supabase.removeChannel(resultsChannel);
     };
-  }, [currentVote?.status]);
+  }, []); // 의존성 배열을 비워 무한 루프 방지
 
   const fetchMyVote = async (voteId: string) => {
     if (!currentUser) return;
@@ -97,6 +113,12 @@ export const FinalVoteModal = () => {
     setMyVote(voteType);
   };
 
+  // 팝업 닫기 함수
+  const handleClose = () => {
+    setShowModal(false);
+    // currentVote를 null로 만들지 않음 (useEffect 재실행 방지)
+  };
+
   const adminEndVote = async () => {
     if (!currentVote) return;
     await supabase.from('active_votes').update({ status: 'finished' }).eq('id', currentVote.id);
@@ -105,21 +127,23 @@ export const FinalVoteModal = () => {
   const adminCancelVote = async () => {
     if (!currentVote) return;
     await supabase.from('active_votes').update({ status: 'cancelled' }).eq('id', currentVote.id);
-    setCurrentVote(null);
-    setMyVote(null);
   };
 
-  if (!currentVote) return null;
+  // 렌더링 조건: 데이터가 있고, showModal이 true일 때만 표시
+  if (!currentVote || !showModal) return null;
 
   const totalVotes = results.fail + results.hold + results.pass || 1;
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
-      {/* Layout */}
       <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-gray-100 dark:border-slate-700 w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col items-center p-10 relative">
         
+        {/* 투표 종료 상태에서만 노출되는 닫기 버튼 */}
         {currentVote.status === 'finished' && (
-          <button onClick={() => { setCurrentVote(null); setMyVote(null); }} className="absolute top-6 right-6 p-2 text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white bg-gray-100 dark:bg-slate-700 rounded-full transition">
+          <button 
+            onClick={handleClose} 
+            className="absolute top-6 right-6 p-2 text-gray-400 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white bg-gray-100 dark:bg-slate-700 rounded-full transition"
+          >
             <X size={24} />
           </button>
         )}
@@ -133,7 +157,7 @@ export const FinalVoteModal = () => {
           </h2>
         </div>
 
-        {/* 1. Live Vote */}
+        {/* 투표 진행 중 (Breathing LED 버튼) */}
         {currentVote.status === 'voting' && !myVote && (
           <div className="w-full flex gap-4 mt-4">
             <div className="flex-1 flex flex-col items-center gap-4">
@@ -159,7 +183,7 @@ export const FinalVoteModal = () => {
           </div>
         )}
 
-        {/* 2. Waiting for other voters */}
+        {/* 내 투표 완료 후 대기 */}
         {currentVote.status === 'voting' && myVote && (
           <div className="flex flex-col items-center py-10">
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
@@ -168,19 +192,19 @@ export const FinalVoteModal = () => {
           </div>
         )}
 
-        {/* 3. Result Status */}
+        {/* 투표 결과 보기 */}
         {currentVote.status === 'finished' && (
           <div className="w-full mt-4">
             <h3 className="text-xl font-bold text-center mb-6 text-gray-900 dark:text-white">투표 결과 (총 {voteCount}명)</h3>
             
             <div className="flex w-full h-12 rounded-full overflow-hidden shadow-inner mb-6 bg-gray-100 dark:bg-slate-700">
-              <div style={{ width: `${(results.pass / totalVotes) * 100}%` }} className="bg-green-500 transition-all duration-1000 flex items-center justify-center font-bold text-white text-sm">
+              <div style={{ width: `${(results.pass / totalVotes) * 100}%` }} className="bg-green-500 flex items-center justify-center font-bold text-white text-sm transition-all duration-500">
                 {results.pass > 0 && `합 ${results.pass}`}
               </div>
-              <div style={{ width: `${(results.hold / totalVotes) * 100}%` }} className="bg-amber-400 transition-all duration-1000 flex items-center justify-center font-bold text-white text-sm">
+              <div style={{ width: `${(results.hold / totalVotes) * 100}%` }} className="bg-amber-400 flex items-center justify-center font-bold text-white text-sm transition-all duration-500">
                 {results.hold > 0 && `보 ${results.hold}`}
               </div>
-              <div style={{ width: `${(results.fail / totalVotes) * 100}%` }} className="bg-red-500 transition-all duration-1000 flex items-center justify-center font-bold text-white text-sm">
+              <div style={{ width: `${(results.fail / totalVotes) * 100}%` }} className="bg-red-500 flex items-center justify-center font-bold text-white text-sm transition-all duration-500">
                 {results.fail > 0 && `불 ${results.fail}`}
               </div>
             </div>
@@ -193,7 +217,7 @@ export const FinalVoteModal = () => {
           </div>
         )}
 
-        {/* Admin control */}
+        {/* 어드민 컨트롤 */}
         <div className="mt-10 w-full pt-6 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between">
           <div className="text-gray-500 dark:text-slate-400 font-medium">
             현재 투표한 유저: <span className="text-blue-600 dark:text-blue-400 font-bold text-lg">{voteCount}</span>명
@@ -210,7 +234,6 @@ export const FinalVoteModal = () => {
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
