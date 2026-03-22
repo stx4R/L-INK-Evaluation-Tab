@@ -38,7 +38,7 @@ export const ApplicantProfile: React.FC = () => {
     });
   };
 
-  // Status badge styles
+  // Led Style based on status
   const getStatusStyle = () => {
     switch(currentStatus) {
       case '면접 대기': 
@@ -54,7 +54,6 @@ export const ApplicantProfile: React.FC = () => {
 
   const statusStyle = getStatusStyle();
 
-  // Department badge
   const getDepartmentStyle = (dept: string) => {
     switch (dept) {
       case '철학부': return { backgroundColor: '#EAD1DC', color: '#374151' };
@@ -82,7 +81,6 @@ export const ApplicantProfile: React.FC = () => {
                 지원자
               </span>
 
-              {/* Live status letterbox */}
               <div 
                 onClick={handleStatusClick}
                 className={`flex items-center gap-2 px-3 py-1 rounded-lg text-sm font-bold transition-all ${statusStyle.bg} ${statusStyle.text} ${currentUser?.isAdmin ? 'cursor-pointer hover:opacity-80' : ''}`}
@@ -102,7 +100,7 @@ export const ApplicantProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Badge */}
+        {/* Right */}
         <div className="flex flex-col items-end gap-3">
           <div 
             className="px-5 py-2 rounded-full font-extrabold text-sm shadow-sm whitespace-nowrap tracking-wide"
@@ -111,11 +109,11 @@ export const ApplicantProfile: React.FC = () => {
             {applicant.department}
           </div>
           
-          {/* Admin Only */}
+          {/* Admin button */}
           {currentUser?.isAdmin && (
             <button 
               onClick={startVote}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-md transition-colors animate-pulse"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl shadow-md transition-all hover:scale-105"
             >
               <Vote size={18} />
               최종 투표 열기
