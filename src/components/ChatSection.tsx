@@ -16,14 +16,6 @@ export const ChatSection = ({ userName }: { userName: string }) => {
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   useEffect(() => {
     const fetchMessages = async () => {
       const { data, error } = await supabase
