@@ -434,25 +434,6 @@ const MOCK_APPLICANTS: Applicant[] = [
     futureActivity: '저는 AI의 활용을 어떻게 규제할지에 대해 모의 국회를 열어 법을 만들어보고 싶습니다. 왜냐하면 AI는 장점도 많지만 단점도 있기 때문에 과연 AI가 주는 피해를 어떻게 줄일 수 있는지에 대해 토론해보고 싶습니다.',
     resolution: '꼭 L-INK동아리 들어가고 싶습니다!!!!!! 만약 제가 들어간다면 최선을 다해 활동에 참여하겠습니다.'
   },
-  {
-    id: 'app-test',
-    studentId: 'test',
-    name: 'test',
-    career: 'test',
-    phone: 'test',
-    schoolEmail: 'test',
-    middleSchool: 'test',
-    department: '창업부',
-    introduction: 'test',
-    motivation: 'test',
-    issue: 'test',
-    issueRelation: 'test',
-    tendency: 'test',
-    reasonExample: 'test',
-    futureActivity: 'test',
-    resolution: 'test'
-  },
-
 ];
 
 interface StoreState {
